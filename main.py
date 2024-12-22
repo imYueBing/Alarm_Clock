@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import ttk
-from datetime import datetime
+from tkinter import ttk, messagebox
+from datetime import datetime, timedelta
 from localization import t, set_language
 from alarm_audio import set_alarm_audio
 from alarm_buzzer import set_alarm_buzzer
@@ -36,11 +36,49 @@ def update_time_and_weather():
 
 # 打开音频闹钟设置窗口
 def open_audio_alarm():
-    pass  # 这里可以填写具体音频闹钟的逻辑
+    def confirm_alarm():
+        try:
+            alarm_time_str = alarm_input.get()
+            alarm_time = datetime.strptime(alarm_time_str, "%H:%M")
+            now = datetime.now()
+            alarm_time = now.replace(hour=alarm_time.hour, minute=alarm_time.minute, second=0)
+            if alarm_time < now:
+                alarm_time += timedelta(days=1)
+            set_alarm_audio(alarm_time, alarm_sound)
+            messagebox.showinfo(t("audio_alarm"), f"{t('audio_alarm_set')} {alarm_time.strftime('%H:%M')}")
+            alarm_window.destroy()
+        except ValueError:
+            messagebox.showerror(t("error"), t("invalid_time_format"))
+
+    alarm_window = tk.Toplevel(root)
+    alarm_window.title(t("audio_alarm"))
+    tk.Label(alarm_window, text=f"{t('audio_alarm')} (HH:MM):", font=("Arial", 12)).pack(pady=10)
+    alarm_input = ttk.Entry(alarm_window)
+    alarm_input.pack(pady=5, padx=10)
+    ttk.Button(alarm_window, text=t("confirm"), command=confirm_alarm).pack(pady=10)
 
 # 打开蜂鸣器闹钟设置窗口
 def open_buzzer_alarm():
-    pass  # 这里可以填写具体蜂鸣器闹钟的逻辑
+    def confirm_alarm():
+        try:
+            alarm_time_str = alarm_input.get()
+            alarm_time = datetime.strptime(alarm_time_str, "%H:%M")
+            now = datetime.now()
+            alarm_time = now.replace(hour=alarm_time.hour, minute=alarm_time.minute, second=0)
+            if alarm_time < now:
+                alarm_time += timedelta(days=1)
+            set_alarm_buzzer(alarm_time)
+            messagebox.showinfo(t("buzzer_alarm"), f"{t('buzzer_alarm_set')} {alarm_time.strftime('%H:%M')}")
+            alarm_window.destroy()
+        except ValueError:
+            messagebox.showerror(t("error"), t("invalid_time_format"))
+
+    alarm_window = tk.Toplevel(root)
+    alarm_window.title(t("buzzer_alarm"))
+    tk.Label(alarm_window, text=f"{t('buzzer_alarm')} (HH:MM):", font=("Arial", 12)).pack(pady=10)
+    alarm_input = ttk.Entry(alarm_window)
+    alarm_input.pack(pady=5, padx=10)
+    ttk.Button(alarm_window, text=t("confirm"), command=confirm_alarm).pack(pady=10)
 
 # 打开秒表功能窗口
 def open_timer():
@@ -88,12 +126,6 @@ weather_label.pack()
 update_time_and_weather()
 
 # 功能按钮
-def open_audio_alarm():
-    pass  # 音频闹钟功能逻辑
-
-def open_buzzer_alarm():
-    pass  # 蜂鸣器闹钟功能逻辑
-
 text_keys = [
     "audio_alarm", "buzzer_alarm", "timer",
     "exit"
