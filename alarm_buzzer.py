@@ -1,50 +1,34 @@
-import time
 import RPi.GPIO as GPIO
+import threading
+from tkinter import messagebox
+from datetime import datetime
+from localization import t
 
-BUZZER_PIN = 18  # GPIO 引脚
+# GPIO 引脚定义
+BUZZER_PIN = 17
 
-def setup_buzzer():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(BUZZER_PIN, GPIO.OUT)
-    GPIO.output(BUZZER_PIN, GPIO.LOW)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUZZER_PIN, GPIO.OUT)
 
-def cleanup_buzzer():
-    GPIO.output(BUZZER_PIN, GPIO.LOW)
-    GPIO.cleanup()
-
-def buzz(duration=1):
+def buzz(duration):
+    """
+    控制蜂鸣器响起
+    :param duration: int，持续时间（秒）
+    """
     GPIO.output(BUZZER_PIN, GPIO.HIGH)
-    time.sleep(duration)
+    threading.Event().wait(duration)
     GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 def set_alarm_buzzer(alarm_time):
     """
-    设置蜂鸣器闹钟功能，在指定时间触发蜂鸣器。
-    :param alarm_time: str，格式为 "HH:MM:SS"
+    设置蜂鸣器闹钟
+    :param alarm_time: datetime，闹钟时间
     """
-    setup_buzzer()
-    from datetime import datetime
-    global is_buzzer_running
-    is_buzzer_running = False  # 标记蜂鸣器是否正在运行
-
-    try:
+    def alarm_thread():
         while True:
-            current_time = datetime.now().strftime("%H:%M:%S")
-            if current_time == alarm_time:
-                is_buzzer_running = True
-                for _ in range(5):
-                    if not is_buzzer_running:
-                        break
-                    buzz(0.5)
-                    time.sleep(0.5)
+            if datetime.now() >= alarm_time:
+                buzz(5)  # 蜂鸣器响 5 秒
+                messagebox.showinfo(t("buzzer_alarm"), t("buzzer_alarm_triggered"))
                 break
-    finally:
-        cleanup_buzzer()
-
-def stop_alarm_buzzer():
-    """
-    停止蜂鸣器闹钟
-    """
-    global is_buzzer_running
-    if is_buzzer_running:
-        is_buzzer_running = False
+            threading.Event().wait(1)
+    threading.Thread(target=alarm_thread, daemon=True).start()
