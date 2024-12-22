@@ -13,14 +13,27 @@ set_language("ko")
 # 默认音频路径
 alarm_sound = "assets/alarm.mp3"
 
+# 默认城市
+DEFAULT_CITY = "Seoul"
 
-def update_time():
+
+def update_time_and_weather():
     """
-    实时更新当前时间显示
+    实时更新当前时间和天气显示
     """
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    time_label.config(text=now)
-    root.after(1000, update_time)
+    time_label.config(text=f"{t('current_time')}: {now}")
+
+    # 更新天气信息，仅显示城市和温度
+    weather_info = get_weather(DEFAULT_CITY)
+    if weather_info:
+        temp = weather_info.get("temp", "N/A")
+        city = weather_info.get("city", DEFAULT_CITY)
+        weather_label.config(text=f"{city}: {temp}°C")
+    else:
+        weather_label.config(text=f"{DEFAULT_CITY}: N/A")
+
+    root.after(60000, update_time_and_weather)  # 每分钟更新一次
 
 
 def open_audio_alarm():
@@ -75,50 +88,6 @@ def open_buzzer_alarm():
     ttk.Button(alarm_window, text=t("buzzer_alarm"), command=confirm_alarm).pack(pady=10)
 
 
-def open_countdown_timer():
-    """
-    打开倒计时设置窗口
-    """
-    def confirm_timer():
-        try:
-            seconds = int(timer_input.get())
-            if seconds <= 0:
-                raise ValueError
-            start_countdown_timer(seconds)
-            messagebox.showinfo(t("start_timer"), t("timer_started"))
-            timer_window.destroy()
-        except ValueError:
-            messagebox.showerror(t("error"), t("invalid_time_format"))
-
-    timer_window = tk.Toplevel(root)
-    timer_window.title(t("start_timer"))
-    tk.Label(timer_window, text=t("start_timer"), font=("Arial", 12)).pack(pady=10)
-    timer_input = ttk.Entry(timer_window)
-    timer_input.pack(pady=5, padx=10)
-    ttk.Button(timer_window, text=t("start_timer"), command=confirm_timer).pack(pady=10)
-
-
-def open_weather_query():
-    """
-    打开天气查询窗口
-    """
-    def confirm_city():
-        city = city_input.get()
-        if not city:
-            messagebox.showerror(t("error"), t("invalid_city"))
-            return
-        weather_info = get_weather(city)
-        messagebox.showinfo(t("check_weather"), weather_info)
-        weather_window.destroy()
-
-    weather_window = tk.Toplevel(root)
-    weather_window.title(t("check_weather"))
-    tk.Label(weather_window, text=t("check_weather"), font=("Arial", 12)).pack(pady=10)
-    city_input = ttk.Entry(weather_window)
-    city_input.pack(pady=5, padx=10)
-    ttk.Button(weather_window, text=t("check_weather"), command=confirm_city).pack(pady=10)
-
-
 def switch_language():
     """
     切换语言
@@ -152,14 +121,17 @@ style = ttk.Style()
 style.configure("TButton", font=("Arial", 12), padding=5)
 style.configure("TLabel", font=("Arial", 14), padding=5)
 
-# 当前时间显示
+# 当前时间和天气显示
 time_frame = ttk.Frame(root)
 time_frame.pack(pady=20)
 time_title_label = ttk.Label(time_frame, text=t("current_time"), font=("Arial", 16))
 time_title_label.pack(side=tk.LEFT, padx=5)
 time_label = ttk.Label(time_frame, text="", font=("Arial", 16))
 time_label.pack(side=tk.LEFT)
-update_time()
+
+# 天气显示
+weather_label = ttk.Label(time_frame, text="", font=("Arial", 14))
+weather_label.pack(pady=10)
 
 # 语言选择
 language_var = tk.StringVar(value="한국어")
@@ -170,12 +142,10 @@ ttk.OptionMenu(language_frame, language_var, "한국어", "中文", command=lamb
 
 # 功能按钮
 text_keys = [
-    "audio_alarm", "buzzer_alarm", "start_timer",
-    "check_weather", "exit"
+    "audio_alarm", "buzzer_alarm", "exit"
 ]
 functions = [
     open_audio_alarm, open_buzzer_alarm,
-    open_countdown_timer, open_weather_query,
     root.quit
 ]
 buttons_frame = ttk.Frame(root)
@@ -185,5 +155,8 @@ for key, func in zip(text_keys, functions):
     button = ttk.Button(buttons_frame, text=t(key), command=func, width=25)
     button.pack(pady=5)
     buttons.append(button)
+
+# 启动时间和天气更新
+update_time_and_weather()
 
 root.mainloop()
