@@ -5,6 +5,7 @@ from localization import t, set_language
 from alarm_audio import set_alarm_audio
 from alarm_buzzer import set_alarm_buzzer
 from timer import TimerApp
+from weather import get_weather
 
 # 默认设置韩语
 set_language("ko")
@@ -12,11 +13,26 @@ set_language("ko")
 # 默认音频路径
 alarm_sound = "assets/alarm.mp3"
 
-# 更新当前时间
-def update_time():
+# 默认城市
+DEFAULT_CITY = "Seoul"
+
+# 更新当前时间和天气
+def update_time_and_weather():
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     time_label.config(text=now)
-    root.after(1000, update_time)
+
+    try:
+        weather_info = get_weather(DEFAULT_CITY)
+        if isinstance(weather_info, dict):
+            city = weather_info.get("city", DEFAULT_CITY)
+            temp = weather_info.get("temp", "N/A")
+            weather_label.config(text=f"{city}: {temp}°C")
+        else:
+            weather_label.config(text=f"{DEFAULT_CITY}: N/A")
+    except Exception as e:
+        weather_label.config(text=f"{DEFAULT_CITY}: Error")
+
+    root.after(1000, update_time_and_weather)
 
 # 打开音频闹钟设置窗口
 def open_audio_alarm():
@@ -31,8 +47,7 @@ def open_timer():
     TimerApp(root)
 
 # 切换语言
-def switch_language():
-    lang = language_var.get()
+def switch_language(lang):
     if lang == "中文":
         set_language("zh")
     elif lang == "한국어":
@@ -42,6 +57,8 @@ def switch_language():
 # 刷新界面文字
 def refresh_ui():
     root.title(t("welcome"))
+    time_label_title.config(text=t("current_time"))
+    weather_label_title.config(text=t("current_weather"))
     for button, text_key in zip(buttons, text_keys):
         button.config(text=t(text_key))
 
@@ -55,12 +72,20 @@ style = ttk.Style()
 style.configure("TButton", font=("Arial", 12), padding=5)
 style.configure("TLabel", font=("Arial", 14), padding=5)
 
-# 当前时间显示
+# 当前时间和天气显示
 time_frame = ttk.Frame(root)
 time_frame.pack(pady=20)
+time_label_title = ttk.Label(time_frame, text=t("current_time"), font=("Arial", 16))
+time_label_title.pack()
 time_label = ttk.Label(time_frame, text="", font=("Arial", 16))
 time_label.pack()
-update_time()
+
+weather_label_title = ttk.Label(time_frame, text=t("current_weather"), font=("Arial", 14))
+weather_label_title.pack()
+weather_label = ttk.Label(time_frame, text="", font=("Arial", 14))
+weather_label.pack()
+
+update_time_and_weather()
 
 # 功能按钮
 def open_audio_alarm():
@@ -86,10 +111,10 @@ for key, func in zip(text_keys, functions):
     buttons.append(button)
 
 # 切换语言选项
-language_var = tk.StringVar(value="한국어")
 language_frame = ttk.Frame(root)
 language_frame.pack(pady=10)
-ttk.Label(language_frame, text="언어 선택:", font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
-ttk.OptionMenu(language_frame, language_var, "한국어", "中文", command=lambda _: switch_language()).pack(side=tk.LEFT)
+ttk.Label(language_frame, text=t("language_select"), font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
+ttk.Button(language_frame, text="한국어", command=lambda: switch_language("한국어")).pack(side=tk.LEFT, padx=5)
+ttk.Button(language_frame, text="中文", command=lambda: switch_language("中文")).pack(side=tk.LEFT, padx=5)
 
 root.mainloop()
