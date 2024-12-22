@@ -1,28 +1,41 @@
-import pygame
 import time
+from datetime import datetime
+from threading import Thread
+from weather import get_weather
+import tkinter as tk
 
-def display_time():
-    """
-    使用 pygame 显示当前时间
-    """
-    pygame.init()
-    screen = pygame.display.set_mode((400, 200))
-    pygame.display.set_caption("현재 시간")  # 显示窗口标题
-    font = pygame.font.Font(None, 74)
-    clock = pygame.time.Clock()
+class ClockApp:
+    def __init__(self, parent_frame):
+        self.frame = parent_frame
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        # 当前时间显示
+        self.time_label = tk.Label(self.frame, text="", font=("Helvetica", 18))
+        self.time_label.pack(anchor="center", pady=10)
 
-        screen.fill((0, 0, 0))
-        current_time = time.strftime("%H:%M:%S")
-        text = font.render(current_time, True, (255, 255, 255))
-        screen.blit(text, (100, 80))
+        # 天气信息显示
+        self.weather_label = tk.Label(self.frame, text="날씨 정보 로딩 중...", font=("Helvetica", 14), wraplength=300)
+        self.weather_label.pack(anchor="center", pady=10)
 
-        pygame.display.flip()
-        clock.tick(1)
+        self.running = True
 
-    pygame.quit()
+        # 启动时间和天气更新线程
+        Thread(target=self.update_time, daemon=True).start()
+        Thread(target=self.update_weather, daemon=True).start()
+
+    def update_time(self):
+        """
+        实时更新当前时间
+        """
+        while self.running:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.time_label.config(text=f"현재 시간: {current_time}")
+            time.sleep(1)
+
+    def update_weather(self):
+        """
+        定时更新天气信息
+        """
+        while self.running:
+            weather_info = get_weather()
+            self.weather_label.config(text=f"현재 날씨:\n{weather_info}")
+            time.sleep(600)  # 每 10 分钟刷新一次
