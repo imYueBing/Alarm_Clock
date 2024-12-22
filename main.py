@@ -16,7 +16,6 @@ alarm_sound = "assets/alarm.mp3"
 # 默认城市
 DEFAULT_CITY = "Seoul"
 
-
 def update_time_and_weather():
     """
     实时更新当前时间和天气显示
@@ -39,16 +38,6 @@ def update_time_and_weather():
 
     root.after(60000, update_time_and_weather)  # 每分钟更新一次
 
-
-def get_weather(city):
-    """
-    模拟的 get_weather 函数实现：
-    返回一个包含城市名称和温度的字典
-    """
-    # 示例返回值
-    return {"city": city, "temp": 25}
-
-
 # 主界面
 root = tk.Tk()
 root.title(t("welcome"))
@@ -62,14 +51,10 @@ style.configure("TLabel", font=("Arial", 14), padding=5)
 # 当前时间和天气显示
 time_frame = ttk.Frame(root)
 time_frame.pack(pady=20)
-time_title_label = ttk.Label(time_frame, text=t("current_time"), font=("Arial", 16))
-time_title_label.pack(side=tk.LEFT, padx=5)
 time_label = ttk.Label(time_frame, text="", font=("Arial", 16))
-time_label.pack(side=tk.LEFT)
-
-# 天气显示
+time_label.pack(pady=5)  # 当前时间独占一行
 weather_label = ttk.Label(time_frame, text="", font=("Arial", 14))
-weather_label.pack(pady=10)
+weather_label.pack(pady=5)  # 天气信息独占一行
 
 # 启动时间和天气更新
 update_time_and_weather()
