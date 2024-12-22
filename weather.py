@@ -1,26 +1,25 @@
 import requests
 
-API_KEY = "your_api_key_here"  # 替换为您的 OpenWeatherMap API 密钥
-BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
+DEFAULT_CITY = "Seoul"
+API_KEY = "1267b1d7a73e19a8bf0404c280eb8085"
 
-def get_weather(city):
+def get_weather(city=DEFAULT_CITY):
     """
-    获取指定城市的天气信息
+    获取天气信息
     :param city: str，城市名称
-    :return: str，天气描述和温度
+    :return: str，天气信息
     """
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units=metric"
     try:
-        params = {
-            "q": city,
-            "appid": API_KEY,
-            "units": "metric",
-            "lang": "kr"  # 返回韩语描述
-        }
-        response = requests.get(BASE_URL, params=params)
-        response.raise_for_status()
+        response = requests.get(url)
         data = response.json()
-        weather_desc = data["weather"][0]["description"]
-        temperature = data["main"]["temp"]
-        return f"{city}의 날씨: {weather_desc}, 온도: {temperature}°C"
-    except requests.exceptions.RequestException as e:
-        return f"날씨 정보를 가져올 수 없습니다: {e}"
+        if response.status_code == 200:
+            weather = data["weather"][0]["description"]
+            temp = data["main"]["temp"]
+            humidity = data["main"]["humidity"]
+            wind_speed = data["wind"]["speed"]
+            return f"날씨: {weather}\n온도: {temp}°C\n습도: {humidity}%\n바람 속도: {wind_speed} m/s"
+        else:
+            return f"오류: {data.get('message', '날씨 정보를 가져올 수 없습니다.')}"
+    except Exception as e:
+        return f"오류 발생: {e}"
