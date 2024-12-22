@@ -5,7 +5,7 @@ from localization import t, set_language
 from alarm_audio import set_alarm_audio
 from alarm_buzzer import set_alarm_buzzer
 from timer import start_countdown_timer
-from weather import get_weather  # 假设从这里获取天气信息
+from weather import get_weather
 
 # 默认设置韩语
 set_language("ko")
@@ -22,11 +22,11 @@ def update_time_and_weather():
     """
     # 更新当前时间
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    time_label.config(text=f"{t('current_time')}: {now}")
+    time_label.config(text=now)
 
-    # 更新天气信息，仅显示城市和温度
+    # 更新天气信息
     try:
-        weather_info = get_weather(DEFAULT_CITY)  # 从 weather 模块获取天气
+        weather_info = get_weather(DEFAULT_CITY)  # 从 weather 模块获取天气信息
         if isinstance(weather_info, dict):
             city = weather_info.get("city", DEFAULT_CITY)
             temp = weather_info.get("temp", "N/A")
@@ -36,7 +36,8 @@ def update_time_and_weather():
     except Exception as e:
         weather_label.config(text=f"{DEFAULT_CITY}: Error")
 
-    root.after(60000, update_time_and_weather)  # 每分钟更新一次
+    # 循环调用自身，确保实时更新
+    root.after(1000, update_time_and_weather)
 
 def open_audio_alarm():
     """
