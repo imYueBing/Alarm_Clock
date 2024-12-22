@@ -99,6 +99,7 @@ def refresh_ui():
     weather_label_title.config(text=t("current_weather"))
     for button, text_key in zip(buttons, text_keys):
         button.config(text=t(text_key))
+    language_label.config(text=t("language_select"))
 
 # 主界面
 root = tk.Tk()
@@ -145,7 +146,8 @@ for key, func in zip(text_keys, functions):
 # 切换语言选项
 language_frame = ttk.Frame(root)
 language_frame.pack(pady=10)
-ttk.Label(language_frame, text=t("language_select"), font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
+language_label = ttk.Label(language_frame, text=t("language_select"), font=("Arial", 12))
+language_label.pack(side=tk.LEFT, padx=5)
 ttk.Button(language_frame, text="한국어", command=lambda: switch_language("한국어")).pack(side=tk.LEFT, padx=5)
 ttk.Button(language_frame, text="中文", command=lambda: switch_language("中文")).pack(side=tk.LEFT, padx=5)
 
