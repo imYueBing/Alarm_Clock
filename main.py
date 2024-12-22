@@ -1,10 +1,10 @@
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from tkinter import filedialog, messagebox
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from datetime import datetime
+import threading
 from localization import t, set_language
 import alarm_audio
 import alarm_buzzer
-import time_display
 import weather
 import timer
 
@@ -15,8 +15,13 @@ set_language("ko")
 alarm_sound = "assets/alarm.mp3"  # 默认音频路径
 
 
-def show_time_display():
-    time_display.display_time()
+def update_time():
+    """
+    实时更新当前时间显示
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_label.config(text=now)
+    root.after(1000, update_time)
 
 
 def set_audio_alarm():
@@ -29,12 +34,12 @@ def set_audio_alarm():
         messagebox.showinfo(t("audio_alarm"), f"{t('audio_alarm')} {alarm_time}")
         alarm_window.destroy()
 
-    alarm_window = ttk.Toplevel(root)
+    alarm_window = tk.Toplevel(root)
     alarm_window.title(t("audio_alarm"))
-    ttk.Label(alarm_window, text=f"{t('audio_alarm')} (HH:MM:SS):").pack(pady=10)
+    tk.Label(alarm_window, text=f"{t('audio_alarm')} (HH:MM:SS):", font=("Arial", 12)).pack(pady=10)
     alarm_input = ttk.Entry(alarm_window)
-    alarm_input.pack(pady=5)
-    ttk.Button(alarm_window, text=t("audio_alarm"), bootstyle=SUCCESS, command=confirm_alarm).pack(pady=10)
+    alarm_input.pack(pady=5, padx=10)
+    ttk.Button(alarm_window, text=t("audio_alarm"), command=confirm_alarm).pack(pady=10)
 
 
 def stop_audio_alarm():
@@ -57,12 +62,12 @@ def check_weather():
         messagebox.showinfo(t("check_weather"), weather_info)
         weather_window.destroy()
 
-    weather_window = ttk.Toplevel(root)
+    weather_window = tk.Toplevel(root)
     weather_window.title(t("check_weather"))
-    ttk.Label(weather_window, text=f"{t('check_weather')}:").pack(pady=10)
+    tk.Label(weather_window, text=f"{t('check_weather')}:").pack(pady=10)
     city_input = ttk.Entry(weather_window)
-    city_input.pack(pady=5)
-    ttk.Button(weather_window, text=t("check_weather"), bootstyle=PRIMARY, command=confirm_city).pack(pady=10)
+    city_input.pack(pady=5, padx=10)
+    ttk.Button(weather_window, text=t("check_weather"), command=confirm_city).pack(pady=10)
 
 
 def start_timer():
@@ -77,12 +82,12 @@ def start_timer():
         except ValueError:
             messagebox.showerror(t("error"), t("error"))
 
-    timer_window = ttk.Toplevel(root)
+    timer_window = tk.Toplevel(root)
     timer_window.title(t("start_timer"))
-    ttk.Label(timer_window, text=f"{t('start_timer')} ({t('stop_timer')}):").pack(pady=10)
+    tk.Label(timer_window, text=f"{t('start_timer')} ({t('stop_timer')}):").pack(pady=10)
     timer_input = ttk.Entry(timer_window)
-    timer_input.pack(pady=5)
-    ttk.Button(timer_window, text=t("start_timer"), bootstyle=INFO, command=confirm_timer).pack(pady=10)
+    timer_input.pack(pady=5, padx=10)
+    ttk.Button(timer_window, text=t("start_timer"), command=confirm_timer).pack(pady=10)
 
 
 def change_alarm_sound():
@@ -110,33 +115,46 @@ def refresh_ui():
 
 
 # 主界面
-root = ttk.Window(themename="solar")  # 选择主题
+root = tk.Tk()
 root.title(t("welcome"))
 root.geometry("600x400")
 
+# 样式优化
+style = ttk.Style()
+style.configure("TButton", font=("Arial", 12), padding=5)
+style.configure("TLabel", font=("Arial", 14), padding=5)
+
+# 当前时间显示
+time_frame = ttk.Frame(root)
+time_frame.pack(pady=20)
+ttk.Label(time_frame, text="현재 시간:", font=("Arial", 16)).pack(side=tk.LEFT, padx=5)
+time_label = ttk.Label(time_frame, text="", font=("Arial", 16))
+time_label.pack(side=tk.LEFT)
+update_time()  # 开始实时更新时间
+
 # 语言选择
-language_var = ttk.StringVar(value="한국어")
+language_var = tk.StringVar(value="한국어")
 language_frame = ttk.Frame(root)
 language_frame.pack(pady=10)
-ttk.Label(language_frame, text="언어 선택:").pack(side=LEFT, padx=5)
-ttk.OptionMenu(language_frame, language_var, "한국어", "中文", command=lambda _: switch_language()).pack(side=LEFT)
+ttk.Label(language_frame, text="언어 선택:", font=("Arial", 12)).pack(side=tk.LEFT, padx=5)
+ttk.OptionMenu(language_frame, language_var, "한국어", "中文", command=lambda _: switch_language()).pack(side=tk.LEFT)
 
 # 功能按钮
 text_keys = [
-    "current_time", "audio_alarm", "buzzer_alarm", 
-    "stop_audio_alarm", "stop_buzzer_alarm", 
+    "audio_alarm", "buzzer_alarm",
+    "stop_audio_alarm", "stop_buzzer_alarm",
     "check_weather", "start_timer", "change_alarm_sound", "exit"
 ]
 functions = [
-    show_time_display, set_audio_alarm, stop_audio_alarm, 
-    stop_buzzer_alarm, check_weather, start_timer, 
+    set_audio_alarm, stop_audio_alarm,
+    stop_buzzer_alarm, check_weather, start_timer,
     change_alarm_sound, root.quit
 ]
 buttons_frame = ttk.Frame(root)
 buttons_frame.pack(pady=20)
 buttons = []
 for key, func in zip(text_keys, functions):
-    button = ttk.Button(buttons_frame, text=t(key), bootstyle=PRIMARY, command=func, width=25)
+    button = ttk.Button(buttons_frame, text=t(key), command=func, width=25)
     button.pack(pady=5)
     buttons.append(button)
 
