@@ -3,48 +3,59 @@ from time_display import ClockApp
 from weather import get_weather
 from alarm_audio import set_alarm_audio
 from alarm_buzzer import set_alarm_buzzer
-from localization import t, set_language
 from threading import Thread
+import time
 
-# 默认语言设置为韩语
-set_language("ko")
-
+# 天气模块的默认城市
+DEFAULT_CITY = "Seoul"
 
 class MainApp:
     def __init__(self, root):
         self.root = root
-        self.root.title(t("welcome"))
-        self.root.geometry("800x600")
+        self.root.title("스마트 알람 시계")
+        self.root.geometry("1000x600")
 
-        # 主布局
+        # 配置网格布局
         self.root.columnconfigure(0, weight=1)
+        self.root.columnconfigure(1, weight=2)
+        self.root.columnconfigure(2, weight=1)
         self.root.rowconfigure(0, weight=1)
-        self.root.rowconfigure(1, weight=1)
+        self.root.rowconfigure(1, weight=2)
 
-        # 顶部：时间和天气模块
-        self.time_weather_frame = tk.Frame(self.root, bg="lightblue", padx=10, pady=10)
-        self.time_weather_frame.grid(row=0, column=0, sticky="nsew")
-        self.init_time_weather()
+        # 左上角 - 当前时间和天气
+        self.clock_frame = tk.Frame(root, bg="lightblue", padx=10, pady=10)
+        self.clock_frame.grid(row=0, column=0, sticky="nsew")
+        self.init_clock_and_weather()
 
-        # 底部：闹钟设置
-        self.alarm_frame = tk.Frame(self.root, bg="lightyellow", padx=10, pady=10)
+        # 左下角 - 闹钟设置
+        self.alarm_frame = tk.Frame(root, bg="lightyellow", padx=10, pady=10)
         self.alarm_frame.grid(row=1, column=0, sticky="nsew")
         self.init_alarm_controls()
 
-    def init_time_weather(self):
-        """
-        初始化时间和天气显示模块
-        """
-        # 当前时间显示
-        self.clock_app = ClockApp(self.time_weather_frame)
+        # 中央 - 预留功能区域
+        self.schedule_frame = tk.Frame(root, bg="white", padx=10, pady=10)
+        self.schedule_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
+        self.init_schedule_area()
 
-        # 天气信息显示
+        # 右下角 - 氛围灯（预留区域）
+        self.led_frame = tk.Frame(root, bg="lightpink", padx=10, pady=10)
+        self.led_frame.grid(row=1, column=2, sticky="nsew")
+        self.init_led_controls()
+
+        # 右上角 - 天气显示（补充）
+        self.weather_frame = tk.Frame(root, bg="lightgreen", padx=10, pady=10)
+        self.weather_frame.grid(row=0, column=2, sticky="nsew")
+
+    def init_clock_and_weather(self):
+        """
+        初始化时钟和天气显示
+        """
+        # 时钟显示
+        self.clock_app = ClockApp(self.clock_frame)
+
+        # 天气显示
         self.weather_label = tk.Label(
-            self.time_weather_frame,
-            text="날씨 정보 로딩 중...",
-            font=("Helvetica", 14),
-            bg="lightblue",
-            wraplength=500,
+            self.clock_frame, text="날씨 정보 로딩 중...", font=("Helvetica", 14), bg="lightblue", wraplength=250
         )
         self.weather_label.pack(anchor="center", pady=10)
 
@@ -53,44 +64,32 @@ class MainApp:
 
     def update_weather(self):
         """
-        更新天气信息
+        定时更新天气信息
         """
         while True:
-            weather_info = get_weather()
+            weather_info = get_weather(DEFAULT_CITY)
             self.weather_label.config(text=f"현재 날씨:\n{weather_info}")
-            self.weather_label.update()
-            self.root.after(600000)  # 每 10 分钟更新一次
+            time.sleep(600)  # 每10分钟更新一次
 
     def init_alarm_controls(self):
         """
         初始化闹钟设置模块
         """
+        tk.Label(self.alarm_frame, text="알람 설정", font=("Helvetica", 14), bg="lightyellow").pack(pady=5)
+
         # 音频闹钟设置
-        tk.Label(
-            self.alarm_frame, text=t("audio_alarm"), font=("Helvetica", 14), bg="lightyellow"
-        ).pack(pady=5)
-        self.audio_alarm_button = tk.Button(
-            self.alarm_frame, text=t("set_audio_alarm"), command=self.open_audio_alarm
-        )
-        self.audio_alarm_button.pack(pady=10)
+        tk.Button(self.alarm_frame, text="오디오 알람 설정", command=self.open_audio_alarm).pack(pady=10)
 
         # 蜂鸣器闹钟设置
-        tk.Label(
-            self.alarm_frame, text=t("buzzer_alarm"), font=("Helvetica", 14), bg="lightyellow"
-        ).pack(pady=5)
-        self.buzzer_alarm_button = tk.Button(
-            self.alarm_frame, text=t("set_buzzer_alarm"), command=self.open_buzzer_alarm
-        )
-        self.buzzer_alarm_button.pack(pady=10)
+        tk.Button(self.alarm_frame, text="부저 알람 설정", command=self.open_buzzer_alarm).pack(pady=10)
 
     def open_audio_alarm(self):
         """
         打开音频闹钟设置窗口
         """
         alarm_window = tk.Toplevel(self.root)
-        alarm_window.title(t("audio_alarm"))
-        tk.Label(alarm_window, text=f"{t('audio_alarm')} (HH:MM):", font=("Helvetica", 12)).pack(pady=10)
-
+        alarm_window.title("오디오 알람 설정")
+        tk.Label(alarm_window, text="시간 입력 (HH:MM):", font=("Helvetica", 12)).pack(pady=10)
         alarm_input = tk.Entry(alarm_window, font=("Helvetica", 12))
         alarm_input.pack(pady=5)
 
@@ -100,23 +99,22 @@ class MainApp:
                 hours, minutes = map(int, alarm_time.split(":"))
                 if 0 <= hours < 24 and 0 <= minutes < 60:
                     set_alarm_audio(f"{hours:02}:{minutes:02}", "assets/alarm.mp3")
-                    tk.messagebox.showinfo(t("audio_alarm"), f"{t('audio_alarm')} {alarm_time}")
+                    tk.messagebox.showinfo("알람 설정", f"오디오 알람 설정 완료: {alarm_time}")
                     alarm_window.destroy()
                 else:
                     raise ValueError
             except ValueError:
-                tk.messagebox.showerror(t("error"), t("invalid_time_format"))
+                tk.messagebox.showerror("오류", "올바른 시간 형식이 아닙니다. HH:MM 형식으로 입력해주세요.")
 
-        tk.Button(alarm_window, text=t("confirm"), command=confirm_alarm).pack(pady=10)
+        tk.Button(alarm_window, text="확인", command=confirm_alarm).pack(pady=10)
 
     def open_buzzer_alarm(self):
         """
         打开蜂鸣器闹钟设置窗口
         """
         alarm_window = tk.Toplevel(self.root)
-        alarm_window.title(t("buzzer_alarm"))
-        tk.Label(alarm_window, text=f"{t('buzzer_alarm')} (HH:MM):", font=("Helvetica", 12)).pack(pady=10)
-
+        alarm_window.title("부저 알람 설정")
+        tk.Label(alarm_window, text="시간 입력 (HH:MM):", font=("Helvetica", 12)).pack(pady=10)
         alarm_input = tk.Entry(alarm_window, font=("Helvetica", 12))
         alarm_input.pack(pady=5)
 
@@ -126,14 +124,27 @@ class MainApp:
                 hours, minutes = map(int, alarm_time.split(":"))
                 if 0 <= hours < 24 and 0 <= minutes < 60:
                     set_alarm_buzzer(f"{hours:02}:{minutes:02}")
-                    tk.messagebox.showinfo(t("buzzer_alarm"), f"{t('buzzer_alarm')} {alarm_time}")
+                    tk.messagebox.showinfo("알람 설정", f"부저 알람 설정 완료: {alarm_time}")
                     alarm_window.destroy()
                 else:
                     raise ValueError
             except ValueError:
-                tk.messagebox.showerror(t("error"), t("invalid_time_format"))
+                tk.messagebox.showerror("오류", "올바른 시간 형식이 아닙니다. HH:MM 형식으로 입력해주세요.")
 
-        tk.Button(alarm_window, text=t("confirm"), command=confirm_alarm).pack(pady=10)
+        tk.Button(alarm_window, text="확인", command=confirm_alarm).pack(pady=10)
+
+    def init_schedule_area(self):
+        """
+        初始化预留区域
+        """
+        tk.Label(self.schedule_frame, text="추가 기능 자리", font=("Helvetica", 16), bg="white").pack(pady=20)
+
+    def init_led_controls(self):
+        """
+        初始化氛围灯控制模块
+        """
+        tk.Label(self.led_frame, text="무드등 제어", font=("Helvetica", 14), bg="lightpink").pack(pady=5)
+        tk.Button(self.led_frame, text="무드등 ON/OFF").pack(pady=10)
 
 
 if __name__ == "__main__":
