@@ -3,9 +3,10 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 from localization import t, set_language
 from alarm_audio import set_alarm_audio
-from alarm_buzzer import set_alarm_buzzer
 from timer import start_countdown_timer
 from weather import get_weather
+import RPi.GPIO as GPIO
+import time
 
 # 默认设置韩语
 set_language("ko")
@@ -15,6 +16,36 @@ alarm_sound = "assets/alarm.mp3"
 
 # 默认城市
 DEFAULT_CITY = "Seoul"
+
+# GPIO 设置
+BUZZER_PIN = 12
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUZZER_PIN, GPIO.OUT)
+GPIO.output(BUZZER_PIN, GPIO.LOW)
+
+def play_buzzer():
+    """
+    播放蜂鸣器声音
+    """
+    for _ in range(5):  # 蜂鸣器响5次
+        GPIO.output(BUZZER_PIN, GPIO.HIGH)
+        time.sleep(0.2)
+        GPIO.output(BUZZER_PIN, GPIO.LOW)
+        time.sleep(0.2)
+
+def set_alarm_buzzer(alarm_time):
+    """
+    设置蜂鸣器闹钟
+    """
+    def check_time():
+        now = datetime.now()
+        if now >= alarm_time:
+            play_buzzer()
+            messagebox.showinfo(t("buzzer_alarm"), t("buzzer_alarm_triggered"))
+        else:
+            root.after(1000, check_time)
+
+    check_time()
 
 def update_time_and_weather():
     """
@@ -170,3 +201,6 @@ for key, func in zip(text_keys, functions):
 update_time_and_weather()
 
 root.mainloop()
+
+# 清理 GPIO
+GPIO.cleanup()
